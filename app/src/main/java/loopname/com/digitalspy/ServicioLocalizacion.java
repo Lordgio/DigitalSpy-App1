@@ -12,6 +12,10 @@ import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.PrintStream;
+import java.net.Socket;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -20,6 +24,7 @@ import java.util.TimerTask;
 import java.util.logging.Handler;
 
 import gestion.GestionPosicion;
+import gestion.Posicion;
 
 public class ServicioLocalizacion extends Service implements LocationListener {
 
@@ -79,7 +84,7 @@ public class ServicioLocalizacion extends Service implements LocationListener {
     @Override
     public void onStart(Intent intent, int startid) {
         Log.d(DEBUG_TAG, "onStart");
-
+        String nombre=intent.getStringExtra("nombre");
         lm = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         try {
             lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, 10f, this);
@@ -89,72 +94,35 @@ public class ServicioLocalizacion extends Service implements LocationListener {
 
 
         Log.d(DEBUG_TAG, lm.toString());
-
-        new SubmitLocationTask(ServicioLocalizacion.this).execute();
+        String latitud=latitude+"";
+        String longitud=longitude+"";
+        new EnviarLocalizacion().execute(nombre,latitud,longitud);
     }
 
-    private void locationTimer() {
+}
 
-        new Handler().postDelayed(new Runnable() {
-            // @Override
-            @Override
-            public void run() {
-                locationTimeExpired = true;
-            }
-        }, 12000);
-    }
-    private class SubmitLocationTask extends AsyncTask<String, Void, Boolean> {
-
-        /** application context. */
-        private Context context;
-
-        private Service service;
-
-        public SubmitLocationTask(Service service) {
-            this.service = service;
-            context = service;
-        }
+    class EnviarLocalizacion extends AsyncTask<String, Void, Posicion> {
 
         @Override
         protected void onPreExecute() {
-            locationTimer(); // Start 12 second timer
-        }
-
-        @Override
-        protected void onPostExecute(final Boolean success) {
-
-            if (success && xmlSuccessful) {
-                lm.removeUpdates(ServicePingLocation.this);
-                onDestroy();
-            } else {
-                if (!GlobalsUtil.DEBUG_ERROR_MSG.equals(""))
-                    Toast.makeText(getBaseContext(),
-                            GlobalsUtil.DEBUG_ERROR_MSG, Toast.LENGTH_SHORT)
-                            .show();
-                GlobalsUtil.DEBUG_ERROR_MSG = "";
-            }
-        }
-        @Override
-        protected Boolean doInBackground(final String... args) {
             try {
-
-                DateFormat df = null;
-                df = new SimpleDateFormat("M/d/yy h:mm a");
-                Date todaysDate = new Date();// get current date time with
-                // Date()
-                String currentDateTime = df.format(todaysDate);
-
-                while ((accuracy > 100f || accuracy == 0.0)
-                        && !locationTimeExpired) {
-                    // We just want it to sit here and wait.
-                }
-
-                return xmlSuccessful = SendToServerUtil.submitGPSPing(
-                        0, longitude,
-                        latitude, accuracy, currentDateTime);
-            } catch (Exception e) {
-
-                return false;
+                Thread.sleep(20000);
+            }catch(InterruptedException ex){
+                ex.printStackTrace();
             }
         }
+        @Override
+        protected Posicion doInBackground(String... params) {
+            Posicion p=new Posicion(params[0],Double.parseDouble(params[1]),Double.parseDouble(params[2]));
+            GestionPosicion gpos=new GestionPosicion();
+            gpos.enviar(p);
+            return p;
+        }
+        @Override
+        protected void onPostExecute(Posicion p) {
+            System.out.println(p.toString());
+            System.out.println("Proceso completado");
+        }
+
+
     }

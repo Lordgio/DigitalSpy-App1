@@ -45,6 +45,8 @@ public class GestionPosicion {
         };*/
     }
 
+    public GestionPosicion(){}
+
     public void enviarDatos() {
         Posicion p = obtenerPosicion();
         System.out.println(p.toString());
@@ -71,7 +73,7 @@ public class GestionPosicion {
 
     }
 
-    private void enviar(Posicion p) {
+    public void enviar(Posicion p) {
         String host = "51.254.214.165";
         int puerto = 8080;
         try {

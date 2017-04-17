@@ -6,123 +6,101 @@ import android.content.Intent;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.util.Log;
-import android.widget.Toast;
+
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.PrintStream;
 import java.net.Socket;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.logging.Handler;
 
-import gestion.GestionPosicion;
 import gestion.Posicion;
 
 public class ServicioLocalizacion extends Service implements LocationListener {
 
-    private final String DEBUG_TAG = "[GPS Ping]";
-
     private LocationManager lm;
     private double latitude;
     private double longitude;
+    private Timer tm;
 
     @Override
     public void onLocationChanged(Location location) {
-        Log.d(DEBUG_TAG, "onLocationChanged");
         latitude = location.getLatitude();
         longitude = location.getLongitude();
     }
+    @Override
+    public void onProviderDisabled(String provider) {}
+    @Override
+    public void onProviderEnabled(String provider) {}
 
     @Override
-    public void onProviderDisabled(String provider) {
-        Log.d(DEBUG_TAG, "onProviderDisabled");
-        Toast.makeText(
-                getApplicationContext(),
-                "Attempted to ping your location, and GPS was disabled.",
-                Toast.LENGTH_LONG).show();
-    }
+    public void onStatusChanged(String provider, int status, Bundle extras) {}
+
     @Override
-    public void onProviderEnabled(String provider) {
-        Log.d(DEBUG_TAG, "onProviderEnabled");
+    public void onCreate() {}
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        final String nombre=intent.getStringExtra("nombre");
+        lm = (LocationManager) ServicioLocalizacion.this.getSystemService(Context.LOCATION_SERVICE);
         try {
-            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, 10f, this);
+            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, 100, ServicioLocalizacion.this);
         }catch(SecurityException ex){
             ex.printStackTrace();
         }
-    }
+        TimerTask task=new TimerTask() {
+            @Override
+            public void run() {
+                Posicion p=null;
+                if(latitude==0 && longitude==0){
+                    try {
+                        Location l = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                        if(l==null){
+                            p=null;
+                        }else{
+                            p=new Posicion(nombre,l.getLongitude(),l.getLatitude());
+                        }
+                    }catch(SecurityException ex){
+                        ex.printStackTrace();
+                    }
+                }else{
+                    p=new Posicion(nombre,latitude,longitude);
+                }
+                String host = "51.254.214.165";
+                int puerto = 8080;
+                try {
+                    Socket sc = new Socket(host, puerto);
+                    PrintStream salida = new PrintStream(sc.getOutputStream());
+                    //Envía código de aplicacion
+                    salida.println("aaa");
+                    //Envía JSON
+                    System.out.println(p.toString());
+                    ObjectOutputStream oos = new ObjectOutputStream(sc.getOutputStream());
+                    oos.writeObject(p);
+                    sc.close();
+                    System.out.println("!!!!!!Envio correcto¡¡¡¡¡¡");
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
 
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-        Log.d(DEBUG_TAG, "onStatusChanged");
-
-    }
-
-    @Override
-    public void onCreate() {
-        Log.d(DEBUG_TAG, "onCreate");
+            }
+        };
+        tm=new Timer();
+        tm.schedule(task,0,30000);
+        return START_STICKY;
     }
 
     @Override
     public void onDestroy() {
-        Log.d(DEBUG_TAG, "onDestroy");
+        tm.cancel();
     }
 
     @Override
     public IBinder onBind(Intent intent) {
-        Log.d(DEBUG_TAG, "onBind");
-
-        return null;
-    }
-    @Override
-    public void onStart(Intent intent, int startid) {
-        Log.d(DEBUG_TAG, "onStart");
-        String nombre=intent.getStringExtra("nombre");
-        lm = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-        try {
-            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, 10f, this);
-        }catch(SecurityException ex){
-            ex.printStackTrace();
-        }
-
-
-        Log.d(DEBUG_TAG, lm.toString());
-        String latitud=latitude+"";
-        String longitud=longitude+"";
-        new EnviarLocalizacion().execute(nombre,latitud,longitud);
+         return null;
     }
 
 }
-
-    class EnviarLocalizacion extends AsyncTask<String, Void, Posicion> {
-
-        @Override
-        protected void onPreExecute() {
-            try {
-                Thread.sleep(20000);
-            }catch(InterruptedException ex){
-                ex.printStackTrace();
-            }
-        }
-        @Override
-        protected Posicion doInBackground(String... params) {
-            Posicion p=new Posicion(params[0],Double.parseDouble(params[1]),Double.parseDouble(params[2]));
-            GestionPosicion gpos=new GestionPosicion();
-            gpos.enviar(p);
-            return p;
-        }
-        @Override
-        protected void onPostExecute(Posicion p) {
-            System.out.println(p.toString());
-            System.out.println("Proceso completado");
-        }
-
-
-    }

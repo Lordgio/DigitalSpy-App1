@@ -10,6 +10,10 @@ import android.os.Bundle;
 import android.os.IBinder;
 
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.PrintStream;
@@ -69,17 +73,28 @@ public class ServicioLocalizacion extends Service implements LocationListener {
                 }else{
                     p=new Posicion(nombre,latitude,longitude);
                 }
-                String host = "51.254.214.165";
-                int puerto = 8080;
+                String host = "192.168.1.16";
+                int puerto = 8000;
                 try {
                     Socket sc = new Socket(host, puerto);
                     PrintStream salida = new PrintStream(sc.getOutputStream());
                     //Envía código de aplicacion
                     salida.println("aaa");
                     //Envía JSON
-                    System.out.println(p.toString());
-                    ObjectOutputStream oos = new ObjectOutputStream(sc.getOutputStream());
-                    oos.writeObject(p);
+                    JSONObject job=new JSONObject();
+                    try {
+                        job.put("nombre", p.getNombre());
+                        job.put("longitud", p.getLongitud());
+                        job.put("latitud", p.getLatitud());
+                    }catch(JSONException ex){
+                        ex.printStackTrace();
+                    }
+
+                    JSONArray jarray=new JSONArray();
+                    jarray.put(job);
+                    String s=jarray.toString();
+                    System.out.println(s);
+                    salida.println(s);
                     sc.close();
                     System.out.println("!!!!!!Envio correcto¡¡¡¡¡¡");
                 } catch (IOException ex) {

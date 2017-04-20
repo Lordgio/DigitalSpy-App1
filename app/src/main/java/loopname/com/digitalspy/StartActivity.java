@@ -34,8 +34,8 @@ public class StartActivity extends AppCompatActivity {
             if(!gPermisos.comprobarPermiso(Manifest.permission.ACCESS_FINE_LOCATION)){
                 gPermisos.pedirPermiso(Manifest.permission.ACCESS_FINE_LOCATION);
             }
-            iniciarServicio();
             bt.setText("Desactivar servicio");
+            iniciarServicio();
         }else{
             pararServicio();
             bt.setText("Activar servicio");

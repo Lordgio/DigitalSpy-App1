@@ -1,5 +1,6 @@
 package loopname.com.digitalspy;
 
+import android.Manifest;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -7,6 +8,8 @@ import android.view.View;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+
+import gestion.GestionPermisos;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -25,6 +28,11 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        GestionPermisos gpers=new GestionPermisos(this,this);
+        if(!gpers.comprobarPermiso(Manifest.permission.ACCESS_FINE_LOCATION)){
+            gpers.pedirPermiso(Manifest.permission.ACCESS_FINE_LOCATION);
+        }
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 

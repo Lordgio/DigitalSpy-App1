@@ -3,14 +3,17 @@ package gestion;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.Toast;
 
 import java.security.Permission;
+import java.util.ArrayList;
 
 
 public class GestionPermisos extends AppCompatActivity{
@@ -39,9 +42,11 @@ public class GestionPermisos extends AppCompatActivity{
     public void pedirPermiso(String permiso){
 
         if (ActivityCompat.shouldShowRequestPermissionRationale(act,permiso)){
-            //If the user has denied the permission previously your code will come to this block
-            //Here you can explain why you need this permission
-            //Explain here why you need this permission
+            AlertDialog.Builder cuadro=new AlertDialog.Builder(act);
+            cuadro.setTitle("Permisos");
+            cuadro.setMessage("Los permisos siguientes son necesarios para el funcionamiento de la app.");
+            cuadro.setPositiveButton(android.R.string.ok,null);
+            cuadro.show();
         }
 
         //And finally ask for the permission
@@ -58,10 +63,10 @@ public class GestionPermisos extends AppCompatActivity{
             //If permission is granted
             if(grantResults.length >0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
                 //Displaying a toast
-                Toast.makeText(ctx,"Permiso aceptado",Toast.LENGTH_LONG).show();
+                Toast.makeText(act,"Permiso aceptado",Toast.LENGTH_LONG).show();
             }else{
                 //Displaying another toast if permission is not granted
-                Toast.makeText(ctx,"Permiso denegado",Toast.LENGTH_LONG).show();
+                Toast.makeText(act,"Permiso denegado",Toast.LENGTH_LONG).show();
             }
         }
     }
